@@ -7,10 +7,10 @@ from datetime import datetime
 
 from telethon.errors import FloodWaitError
 
-from scraping.telegram_client import get_telegram_client
-from scraping.message_scraper import extract_message_data
-from scraping.rate_limiter import handle_rate_limit
-from scraping.logger import setup_logger
+from src.scraping.telegram_client import get_telegram_client
+from src.scraping.message_scraper import extract_message_data
+from src.scraping.rate_limiter import handle_rate_limit
+from src.scraping.logger import setup_logger
 
 
 def load_config():
@@ -65,7 +65,7 @@ async def scrape_channel(client, channel, config):
 
     save_raw_messages(
         messages_data,
-        config["storage"]["raw_message_path"],
+        config["storage"]["raw_data_path"],
         channel_name,
     )
 
