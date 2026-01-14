@@ -1,0 +1,44 @@
+name: Python CI/CD - Task 1
+
+on:
+  push:
+    branches:
+      - main
+      - task-1
+      - task-2
+  pull_request:
+    branches:
+      - main
+      - task-1
+      - task-2
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run linter (optional)
+        run: |
+          pip install flake8
+          flake8 src/ tests/
+
+      - name: Run Task 1 Scraper Script (dry run)
+        env:
+          API_ID: ${{ secrets.API_ID }}
+          API_HASH: ${{ secrets.API_HASH }}
+          SESSION_NAME: ${{ secrets.SESSION_NAME }}
+        run: |
+          python -m src.scraping.scrapper --dry-run
