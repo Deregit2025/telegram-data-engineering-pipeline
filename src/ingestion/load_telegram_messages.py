@@ -9,12 +9,12 @@ from db import get_connection, create_raw_schema, db_conf
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Path to JSON files
+# Path to JSON files (search recursively in case of date folders)
 MESSAGES_FOLDER = Path(__file__).parent.parent.parent / "data" / "raw" / "messages"
 
 def create_raw_table():
     """
-    Create the raw.telegram_messages table
+    Create the raw.telegram_messages table if it doesn't exist
     """
     try:
         conn = get_connection()
@@ -41,12 +41,18 @@ def create_raw_table():
 
 def load_json_files():
     """
-    Read all JSON files in data/raw/messages/ and insert into PostgreSQL
+    Read all JSON files in data/raw/messages/ (including subfolders)
+    and insert into PostgreSQL
     """
     create_raw_schema()
     create_raw_table()
 
-    for json_file in MESSAGES_FOLDER.glob("*.json"):
+    json_files = list(MESSAGES_FOLDER.rglob("*.json"))
+    if not json_files:
+        logger.warning(f"No JSON files found in {MESSAGES_FOLDER}")
+        return
+
+    for json_file in json_files:
         logger.info(f"Loading file: {json_file.name}")
         with open(json_file, "r", encoding="utf-8") as f:
             try:
@@ -58,6 +64,7 @@ def load_json_files():
         conn = get_connection()
         cursor = conn.cursor()
 
+        inserted_count = 0
         for msg in messages:
             try:
                 cursor.execute(f"""
@@ -66,22 +73,23 @@ def load_json_files():
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (message_id) DO NOTHING;
                 """, (
-                    str(msg.get("id")),
+                    str(msg.get("message_id")),           # Correct key
                     msg.get("channel_name"),
-                    msg.get("post_date"),
+                    msg.get("message_date"),              # Correct key
                     msg.get("message_text"),
-                    msg.get("view_count", 0),
-                    msg.get("forward_count", 0),
-                    bool(msg.get("images")),
+                    msg.get("views", 0),                  # Correct key
+                    msg.get("forwards", 0),               # Correct key
+                    bool(msg.get("has_media")),           # Correct key
                     json.dumps(msg)
                 ))
+                inserted_count += 1
             except Exception as e:
-                logger.error(f"Error inserting message {msg.get('id')}: {e}")
+                logger.error(f"Error inserting message {msg.get('message_id')}: {e}")
 
         conn.commit()
         cursor.close()
         conn.close()
-        logger.info(f"Loaded {len(messages)} messages from {json_file.name}")
+        logger.info(f"Loaded {inserted_count} messages from {json_file.name}")
 
 if __name__ == "__main__":
     load_json_files()
