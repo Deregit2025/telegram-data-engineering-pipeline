@@ -31,7 +31,7 @@ clean-targets:         # directories to be removed by `dbt clean`
 # files using the `{{ config(...) }}` macro.
 models:
   medical_warehouse:
-    +schema: analytics        # All models go into analytics schema
+    +schema: analytics       # All models go into analytics schema
     +materialized: table      # Default materialization (can override in each model)
     staging:                  # all models under models/staging/
       +materialized: view

@@ -26,3 +26,8 @@ Thumbs.db
 .vscode/
 .idea/
 config/
+# Ignore YOLO weights
+yolo8n.pt
+# or if in a folder, e.g., weights/
+weights/yolo8n.pt
+
