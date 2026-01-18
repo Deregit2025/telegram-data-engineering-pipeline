@@ -1,0 +1,8 @@
+// Telegram Star Schema
+digraph {
+	F [label=fct_messages]
+	C [label=dim_channels]
+	D [label=dim_dates]
+	F -> C
+	F -> D
+}
