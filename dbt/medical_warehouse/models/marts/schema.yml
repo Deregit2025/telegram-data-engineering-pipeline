@@ -43,3 +43,30 @@ models:
           - relationships:
               to: ref('dim_dates')
               field: date_key
+
+  - name: fct_image_detections
+    description: "Fact table containing YOLO image detection results joined with messages"
+    columns:
+      - name: message_id
+        description: "Unique ID of the message"
+        tests:
+          - not_null
+          - unique
+      - name: channel_key
+        description: "FK to dim_channels"
+        tests:
+          - not_null
+      - name: date_key
+        description: "FK to dim_dates"
+        tests:
+          - not_null
+      - name: detected_class
+        description: "Object class detected by YOLO"
+      - name: confidence_score
+        description: "Confidence score of the detection"
+      - name: image_category
+        description: "Categorical type of image content"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['promotional', 'product_display', 'lifestyle', 'other']
