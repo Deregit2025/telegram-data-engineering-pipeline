@@ -1,0 +1,20 @@
+// Telegram Data Warehouse Star Schema
+digraph {
+	F [label="fact_telegram_messages
+(message_id, channel_id, date_id, message_type_id, image_id, views, forwards, replies)"]
+	C [label="dim_channel
+(channel_id, channel_name, category, is_verified)"]
+	D [label="dim_date
+(date_id, full_date, day, month, year, day_of_week)"]
+	M [label="dim_message_type
+(message_type_id, has_text, has_image, has_video, has_document)"]
+	I [label="dim_image
+(image_id, path, format, size_kb)"]
+	O [label="dim_detected_object
+(object_id, object_name, confidence_score)"]
+	C -> F
+	D -> F
+	M -> F
+	I -> F
+	O -> F
+}
