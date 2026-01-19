@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 import logging
-from db import get_connection, create_raw_schema, db_conf
+from src.ingestion.db import get_connection, create_raw_schema, db_conf
 
 # Configure logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
