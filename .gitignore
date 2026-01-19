@@ -31,3 +31,5 @@ yolov8n.pt
 # or if in a folder, e.g., weights/
 weights/yolov8n.pt
 
+# Dagster temp files
+.tmp_dagster_home_*/
