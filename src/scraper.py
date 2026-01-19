@@ -9,67 +9,85 @@ import asyncio
 import json
 import os
 from datetime import datetime
+from typing import Any, Dict, List
 
-from telethon import TelegramClient  # <-- REQUIRED visible evidence
+from telethon import TelegramClient, errors  # type: ignore
 
 from scrapping.telegram_client import get_telegram_client
 from scrapping.message_scraper import scrape_channel_messages
 from scrapping.logger import get_logger
 from config import load_scraping_config
 
-
 logger = get_logger(__name__)
 
 
-async def run_scraper():
+async def run_scraper() -> None:
     """
     Main scraping pipeline:
     - Connects to Telegram
     - Iterates through configured channels
     - Extracts messages
-    - Writes raw JSON
-    - Downloads images
-    - Logs activity
+    - Writes raw JSON to disk
+    - Logs scraping activity
+
+    Raises:
+        RuntimeError: If Telegram connection fails or messages cannot be fetched.
     """
 
-    config = load_scraping_config()
+    config: Dict[str, Any] = load_scraping_config()
 
-    client: TelegramClient = get_telegram_client()
-    await client.start()
+    try:
+        client: TelegramClient = get_telegram_client()
+        await client.start()
+    except errors.TelegramError as e:
+        logger.exception("Failed to start Telegram client.")
+        raise RuntimeError("Telegram client initialization failed") from e
 
-    today = datetime.utcnow().strftime("%Y-%m-%d")
+    today: str = datetime.utcnow().strftime("%Y-%m-%d")
+    raw_data_path: str = config["storage"].get("raw_data_path", "data/raw")
 
-    for channel in config["telegram"]["channels"]:
-        channel_name = channel["name"]
-        channel_url = channel["url"]
+    for channel in config.get("telegram", {}).get("channels", []):
+        channel_name: str = channel.get("name")
+        channel_url: str = channel.get("url")
+
+        if not channel_name or not channel_url:
+            logger.warning(f"Skipping channel with incomplete configuration: {channel}")
+            continue
 
         logger.info(f"Starting scrape for channel: {channel_name}")
 
-        messages = await scrape_channel_messages(
-            client=client,
-            channel_url=channel_url,
-            channel_name=channel_name,
-            config=config,
-        )
+        try:
+            messages: List[Dict[str, Any]] = await scrape_channel_messages(
+                client=client,
+                channel_url=channel_url,
+                channel_name=channel_name,
+                config=config,
+            )
+        except Exception as e:
+            logger.exception(f"Failed to scrape messages for channel {channel_name}")
+            continue
 
-        # ---------- JSON WRITING (REQUIRED EVIDENCE) ----------
-        output_dir = os.path.join(
-            config["storage"]["raw_data_path"],
-            today,
-        )
+        # ---------- JSON WRITING ----------
+        output_dir: str = os.path.join(raw_data_path, today)
         os.makedirs(output_dir, exist_ok=True)
 
-        output_file = os.path.join(output_dir, f"{channel_name}.json")
-
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(messages, f, ensure_ascii=False, indent=2, default=str)
+        output_file: str = os.path.join(output_dir, f"{channel_name}.json")
+        try:
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(messages, f, ensure_ascii=False, indent=2, default=str)
+        except OSError as e:
+            logger.exception(f"Failed to write messages to {output_file}")
+            continue
 
         logger.info(
-            f"Finished scraping {channel_name}. "
-            f"Messages saved to {output_file}"
+            f"Finished scraping {channel_name}. Messages saved to {output_file}"
         )
 
-    await client.disconnect()
+    try:
+        await client.disconnect()
+    except errors.TelegramError:
+        logger.warning("Error disconnecting Telegram client, ignoring.")
+
     logger.info("Scraping completed for all channels.")
 
 
