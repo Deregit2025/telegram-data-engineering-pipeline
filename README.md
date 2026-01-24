@@ -1,8 +1,4 @@
-Ah! I see exactly what you mean — the previous README touches on the tasks lightly, but it doesn’t **clearly separate Task 2 → Task 5** with objectives, scripts, and deliverables. Let’s make a **comprehensive, task-wise README** that explicitly covers all five tasks. I’ll structure it clearly so anyone reading it can follow the pipeline end-to-end.
 
-Here’s the rewritten version:
-
----
 
 # Telegram Medical Data Warehouse & Analytics Pipeline
 
